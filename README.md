@@ -1,5 +1,9 @@
 # NCDR
-Neural Cognitive Digits Recognition – Handwritten Digit Classifier using PyTorch
+<div align="center">
+  <img src="assets/icon/NCDR_icon.png" alt="profile" width="300">
+</div>
+
+### Neural Cognitive Digits Recognition – Handwritten Digit Classifier using PyTorch
 A modular project for recognizing handwritten digits (MNIST dataset) with PyTorch. 
 Supports both training a neural network model and running an interactive GUI app for digit recognition. 
 ## Features 
