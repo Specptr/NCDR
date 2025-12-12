@@ -1,4 +1,4 @@
-# ui.py
+# ui.py 25 12 12
 """
 Industrial-grade MNIST UI
 """
@@ -436,4 +436,5 @@ class MainWindow(QMainWindow):
             self.pred_panel.update(probs, int(pred))
         except Exception as e:
             # show error on title
+
             self.pred_panel.findChild(QLabel).setText(f"Error: {e}")
