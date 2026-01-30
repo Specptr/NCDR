@@ -28,7 +28,8 @@ from models.mlp import MLPClassifier
 MNIST_MEAN = 0.1307
 MNIST_STD = 0.3081
 
-def load_model(checkpoint_path: str, device: str = "cpu", hidden_sizes: Optional[List[int]] = None, dropout: float = 0.2) -> torch.nn.Module:
+def load_model(checkpoint_path: str, device: str = "cpu", 
+               hidden_sizes: Optional[List[int]] = None, dropout: float = 0.2) -> torch.nn.Module:
     """
     Create MLPClassifier with matching architecture and load weights from checkpoint Path.
     Returns the model on the requested device.
@@ -128,3 +129,4 @@ def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu") -> 
         probs = F.softmax(logits, dim=1).cpu().numpy()[0]
     pred = int(probs.argmax())
     return probs, pred
+
