@@ -1,4 +1,5 @@
 # train.py 25 12 11
+# train_mlp.py 26 1 30# train.py 25 12 11
 """
 Training script for MNIST MLP
 - parases args
@@ -46,8 +47,12 @@ def parse_args():
 def train_one_epoch(model, device, loader, criterion, optimizer, epoch, log_interval):
     model.train()
     running_loss = 0.0
-    running_acc = 0.0
+    # running_acc = 0.0
+    correct = 0
+    total = 0
+
     pbar = tqdm(enumerate(loader), total=len(loader), desc=f"Train Epoch {epoch}")
+
     for batch_idx, (data, target) in pbar:
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -56,29 +61,46 @@ def train_one_epoch(model, device, loader, criterion, optimizer, epoch, log_inte
         loss.backward()
         optimizer.step()
 
-        batch_acc = accuracy(logits, target)
+        # batch_acc = accuracy(logits, target)
         running_loss += loss.item()
-        running_acc += batch_acc
+        # running_acc += batch_acc
+        preds = logits.argmax(dim=1)
+        correct += (preds == target).sum().item()
+        total += target.size(0)
 
         if (batch_idx + 1) % log_interval == 0:
-            pbar.set_postfix(loss=running_loss / (batch_idx + 1), acc=running_acc / (batch_idx + 1))
+            pbar.set_postfix(
+                loss=running_loss / (batch_idx + 1),
+                acc=100.0 * correct / total
+            )
+
     avg_loss = running_loss / len(loader)
-    avg_acc = running_acc / len(loader)
+    # avg_acc = running_acc / len(loader)
+    avg_acc = 100.0 * correct / max(total, 1)
+
     return avg_loss, avg_acc
 
 def validate(model, device, loader, criterion):
     model.eval()
     val_loss = 0.0
     val_acc = 0.0
+
+    correct = 0
+    total = 0
+
     with torch.no_grad():
         for data, target in loader:
             data, target = data.to(device), target.to(device)
             logits = model(data)
             loss = criterion(logits, target)
             val_loss += loss.item()
-            val_acc += accuracy(logits, target)
+            # val_acc += accuracy(logits, target)
+            preds = logits.argmax(dim=1)
+            correct += (preds == target).sum().item()
+            total += target.size(0)
     val_loss /= len(loader)
-    val_acc /= len(loader)
+    # val_acc /= len(loader)
+    val_acc = 100.0 * correct / max(total, 1)
     return val_loss, val_acc
 
 def main():
