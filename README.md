@@ -6,6 +6,9 @@
 <div align="center">
   <img src="assets/screenshots/six_1212.png" alt="profile" width="600">
 </div>
+<div align="center">
+  <img src="assets/screenshots/two_0207.png" alt="profile" width="600">
+</div>
 
 ### Neural Cognitive Digits Recognition – Handwritten Digit Classifier using PyTorch
 A modular project for recognizing handwritten digits (MNIST dataset) with PyTorch. 
