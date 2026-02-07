@@ -6,7 +6,9 @@ Application entrypoint
 - wraps model with a small callable and starts the Qt application
 
 Usage:
-    python -m src.app --model-path checkpoints/mlp_mnist.pth --device cuda
+    cd projects/ncdr
+    python -m src.app --model-type mlp --model-path checkpoints/mlp_mnist.pth --device cuda
+    python -m src.app --model-type cnn --model-path checkpoints/cnn_mnist.pth --device cuda
 """
 
 import argparse
@@ -14,12 +16,8 @@ import sys
 import os
 import numpy as np
 import torch
-
 from PyQt5.QtWidgets import QApplication
-
 from src.inference.inference_utils import load_model, predict_from_qimage
-
-# import UI
 from src.ui.ui import MainWindow
 
 def parse_args():
@@ -29,6 +27,7 @@ def parse_args():
     parser.add_argument("--hidden-sizes", nargs="+", type=int, default=[512, 256])
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--canvas-size", type=int, default=280)
+    parser.add_argument("--model-type", type=str, default="mlp", choices=["mlp", "cnn"])
     return parser.parse_args()
 
 def main():
@@ -36,11 +35,19 @@ def main():
 
     # load model
     device = args.device
-    model = load_model(args.model_path, device=device, hidden_sizes=args.hidden_sizes, dropout=args.dropout)
+    model = load_model(
+        args.model_path,
+        device=device,
+        hidden_sizes=args.hidden_sizes,
+        dropout=args.dropout,
+        model_type=args.model_type
+    )
+
     # prepare callable for UI: it should accept a QImage and return (probs, pred)
     def on_predict(qimage):
         # ensure we run inference on the requested device
-        probs, pred = predict_from_qimage(model, qimage, device=device)
+        flatten = (args.model_type == "mlp")
+        probs, pred = predict_from_qimage(model, qimage, device=device, flatten=flatten)
         # safety: ensure numpy array
         probs = np.asarray(probs, dtype=float)
         return probs, pred
