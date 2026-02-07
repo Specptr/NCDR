@@ -124,4 +124,3 @@ def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu", fla
         probs = F.softmax(logits, dim=1).cpu().numpy()[0]
     pred = int(probs.argmax())
     return probs, pred
-
