@@ -23,21 +23,34 @@ import torch
 import torch.nn.functional as F
 
 # Import your model class (adjust import path if you placed file elsewhere)
-from models.mlp import MLPClassifier
+from src.models.mlp import MLPClassifier
+from src.models.cnn import CNNClassifier
 
 MNIST_MEAN = 0.1307
 MNIST_STD = 0.3081
 
-def load_model(checkpoint_path: str, device: str = "cpu", 
-               hidden_sizes: Optional[List[int]] = None, dropout: float = 0.2) -> torch.nn.Module:
+def load_model(checkpoint_path: str, device: str = "cpu",
+               hidden_sizes: Optional[List[int]] = None,
+               dropout: float = 0.2, model_type: str = "mlp") -> torch.nn.Module:
     """
     Create MLPClassifier with matching architecture and load weights from checkpoint Path.
     Returns the model on the requested device.
     """
-    if hidden_sizes is None:
-        hidden_sizes = [512, 256]
+
     device = torch.device(device)
-    model = MLPClassifier(input_dim=28*28, hidden_sizes=hidden_sizes, num_classes=10, dropout=dropout)
+
+    if model_type == "cnn":
+        model = CNNClassifier(dropout=dropout)
+    else:
+        if hidden_sizes is None:
+            hidden_sizes = [512, 256]
+        model = MLPClassifier(
+                input_dim=28*28,
+                hidden_sizes=hidden_sizes,
+                num_classes=10,
+                dropout=dropout
+            )
+
     # The train.save_checkpoint saved a dict with "model_state" key
     ckpt = torch.load(checkpoint_path, map_location="cpu")
     if "model_state" in ckpt:
@@ -82,7 +95,7 @@ def qimage_to_pil(img_q) -> Image.Image:
         pil = pil.convert("L")
         return pil
 
-def preprocess_pil(pil: Image.Image) -> np.ndarray:
+def preprocess_pil(pil: Image.Image, flatten: bool = True) -> np.ndarray:
     """
     Given a PIL grayscale image, convert to a normalized 1x784 numpy array ready for model.
     Steps:
@@ -97,25 +110,23 @@ def preprocess_pil(pil: Image.Image) -> np.ndarray:
     pil = pil.resize((28, 28), Image.LANCZOS)
     arr = np.array(pil).astype(np.float32) / 255.0  # shape (28,28), values in [0,1]
 
-    # Heuristic: if background is mostly white (>0.7 mean), invert to match MNIST (digit bright)
-    if arr.mean() > 0.5:
-        arr = 1.0 - arr
-
     # Flatten and normalize
     arr = (arr - MNIST_MEAN) / MNIST_STD
-    flat = arr.reshape(1, -1)  # shape (1, 784)
-    return flat
+    if flatten:
+        return arr.reshape(1, -1)
+    else:
+        return arr.reshape(1, 1, 28, 28)
 
-def preprocess_qimage(qimage) -> torch.Tensor:
+def preprocess_qimage(qimage, flatten: bool = True) -> torch.Tensor:
     """
     Full convert from QImage/QPixmap to torch.FloatTensor on CPU (shape [1,784]).
     """
     pil = qimage_to_pil(qimage)
-    flat = preprocess_pil(pil)  # numpy
-    tensor = torch.from_numpy(flat).float()
+    arr = preprocess_pil(pil, flatten=flatten)  # numpy
+    tensor = torch.from_numpy(arr).float()
     return tensor
 
-def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu") -> Tuple[np.ndarray, int]:
+def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu", flatten: bool = True) -> Tuple[np.ndarray, int]:
     """
     Given a loaded model and a QImage, produce (probs_numpy_array, predicted_label).
     - probs: numpy array shape (10,)
@@ -123,10 +134,9 @@ def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu") -> 
     """
     device = torch.device(device)
     model.to(device)
-    x = preprocess_qimage(qimage).to(device)  # shape [1,784]
+    x = preprocess_qimage(qimage, flatten=flatten).to(device)  # shape [1,784]
     with torch.no_grad():
         logits = model(x)  # shape [1,10]
         probs = F.softmax(logits, dim=1).cpu().numpy()[0]
     pred = int(probs.argmax())
     return probs, pred
-
