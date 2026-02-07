@@ -1,5 +1,4 @@
-# train.py 25 12 11
-# train_mlp.py 26 1 30# train.py 25 12 11
+# train_mlp.py 25 12 11
 """
 Training script for MNIST MLP
 - parases args
@@ -11,7 +10,7 @@ Training script for MNIST MLP
 - saves best checkpoint
 
 Usage examples:
-    python -m src.training.train --epochs 20 --batch-size 256 --lr 1e-3 --device cuda
+    python -m src.training.train_mlp --epochs 20 --batch-size 256 --lr 1e-3 --device cuda
 """
 
 import torch
