@@ -3,17 +3,9 @@
 Inference utilities for MNIST UI.
 
 Provides:
-- load_model: construct and load a saved MLP checkpoint
+- load_model: construct and load a saved checkpoint
 - preprocess_qimage: convert a QImage (from drawing canvas) into a normalized tensor usable by the model
 - predict_from_qimage: convenience wrapper that takes a QImage and returns probabilities (numpy array)
-
-Notes:
-- The preprocessing mirrors the training transforms:
-    - Resize to 28x28, convert to float [0,1]
-    - Invert if necessary (UI draws black on white; MNIST has white digit on black background)
-    - Normalize using MNIST mean/std (0.1307, 0.3081)
-    - Flatten to (1, 784)
-- This module deliberately keeps device handling explicit so the UI can choose CPU/GPU.
 """
 
 from typing import Tuple, Optional, List
@@ -21,8 +13,6 @@ import numpy as np
 from PIL import Image
 import torch
 import torch.nn.functional as F
-
-# Import your model class (adjust import path if you placed file elsewhere)
 from src.models.mlp import MLPClassifier
 from src.models.cnn import CNNClassifier
 
@@ -97,13 +87,7 @@ def qimage_to_pil(img_q) -> Image.Image:
 
 def preprocess_pil(pil: Image.Image, flatten: bool = True) -> np.ndarray:
     """
-    Given a PIL grayscale image, convert to a normalized 1x784 numpy array ready for model.
-    Steps:
-      - Resize to 28x28 (ANTIALIAS / LANCZOS)
-      - Convert to float [0,1]
-      - Invert colors if background is white (we detect by checking average)
-      - Normalize by MNIST mean/std
-      - Flatten to (1, 784)
+    Given a PIL grayscale image, convert to a normalized numpy array ready for model.
     """
     # ensure grayscale
     pil = pil.convert("L")
@@ -119,7 +103,7 @@ def preprocess_pil(pil: Image.Image, flatten: bool = True) -> np.ndarray:
 
 def preprocess_qimage(qimage, flatten: bool = True) -> torch.Tensor:
     """
-    Full convert from QImage/QPixmap to torch.FloatTensor on CPU (shape [1,784]).
+    Full convert from QImage/QPixmap to torch.FloatTensor on CPU.
     """
     pil = qimage_to_pil(qimage)
     arr = preprocess_pil(pil, flatten=flatten)  # numpy
@@ -140,3 +124,4 @@ def predict_from_qimage(model: torch.nn.Module, qimage, device: str = "cpu", fla
         probs = F.softmax(logits, dim=1).cpu().numpy()[0]
     pred = int(probs.argmax())
     return probs, pred
+
